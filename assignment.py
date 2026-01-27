@@ -3,15 +3,15 @@ import pandas as pd
 
 cat_a = [500, 20000, 10000]
 cat_b = [10, 20, 30]
-
-"""def calculate_state(data):
+"""___________________________________________________________________________________________________________________________________________________"""
+def calculate_state(data):
     mean_1 = sum(data) / len(data)
     max_1 = max(data)
     return {"mean": mean_1, "max": max_1}
 
-print(f"A: {calculate_state(cat_a)} \nB: {calculate_state(cat_b)}")"""
+print(f"A: {calculate_state(cat_a)} \nB: {calculate_state(cat_b)}")
 
-"""_________________________________________________"""
+"""___________________________________________________________________________________________________________________________________________________"""
 
 def calculate_statistics(data):
     return {
@@ -47,7 +47,7 @@ def test(data,r):
     return test_1 , trine_1
 def encode_labels(labels):
     return {label: idx for idx, label in enumerate(set(labels))}
-"""__________________________________________________________________"""
+"""____________________________________________________________________________________________________________________________________________________"""
 
 raw = {
     "product": ["Widget A", "Widget B", "Widget C"],
@@ -78,4 +78,5 @@ print(df)
 
 print(normalize_data(cat_a, "zscore"))
 """print(normalize_data(cat_a,"minmax"))"""
+
 #https://github.com/shhoooda1431-del/githudAI.git
