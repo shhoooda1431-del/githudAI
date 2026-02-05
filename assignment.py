@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import json
 
 cat_a = [500, 20000, 10000]
 cat_b = [10, 20, 30]
@@ -61,7 +62,7 @@ df["price"] = df["price"].apply(
 )
 
 df["quantity"] = df["quantity"].fillna(0)
-df["total"] = df["price"] * df["quantity"]  #VECTORIZED
+df["total"] = df["price"] * df["quantity"]  
 def categorize_price(x):
     if x < 50:
         return "low"
@@ -153,4 +154,189 @@ top_student_gpa = gpa_dict[top_student_id]
 
 
 print(f"task1 : {students['S001']['courses']['AI301']['grade']} \n task2 : {GPA} \n task3 : {cs101_students} \n task4 : {avg_grade} \n task5 : {top_student_name} with GPA {top_student_gpa}")
+
+"""_________________________________ 5 Activity_____________________________________"""
+
+with open("shahad.txt","w") as f:
+  f.write("shahad")
+with open("shahad.txt","a") as f:
+  f.write("\n shahad12")
+"""__________________________________________homework3__________________________________________________"""
+
+df = pd.DataFrame({
+    "age": [25, "unknown", 30, "NA", 40],
+    "salary": ["5000", "N/A", "?", "7000", "not reported"],
+    "city": ["Riyadh", "Jeddah", "unknown", "Dammam", "Riyadh"]
+})
+
+
+tokens = ["N/A", "NA", "not reported", "unknown", "?"]
+df = df.replace(tokens, np.nan)
+
+
+missing_percent = df.isna().mean() * 100
+
+
+most_harmful = "salary"
+reason = "Because salary is numeric and missing values distort its distribution, harming linear and neural models."
+
+print("Cleaned DataFrame:\n", df, "\n")
+print("Missing Percentages (%):\n", missing_percent, "\n")
+print("Most Harmful Column:", most_harmful)
+print("Reason:", reason)
+
+"""_________________________homework4________________________________________"""
+
+raw = {
+    "age": [25, "N/A", 40, 33, "?"],
+    "income": [50000, 60000, None, "unknown", 80000],
+    "churned": [0, 1, 0, 1, 0],
+}
+
+df_raw = pd.DataFrame(raw)
+
+missing_tokens = ["N/A", "NA", "not reported", "unknown", "?"]
+df = df_raw.replace(missing_tokens, np.nan)
+
+
+df["age"] = pd.to_numeric(df["age"], errors="coerce")
+df["income"] = pd.to_numeric(df["income"], errors="coerce")
+
+
+missing_per_column = df.isna().mean() * 100
+missing_per_row = df.isna().sum(axis=1)
+
+
+key_cols = ["age", "income"]
+df_A = df.dropna(subset=key_cols)
+
+df_B = df.copy()
+
+
+df_B["age_missing"] = df_B["age"].isna().astype(int)
+df_B["income_missing"] = df_B["income"].isna().astype(int)
+
+df_B["age"] = df_B["age"].fillna(df_B["age"].median())
+df_B["income"] = df_B["income"].fillna(df_B["income"].median())
+
+
+comparison = pd.DataFrame({
+    "Version A rows": [len(df_A)],
+    "Version B rows": [len(df_B)],
+    "Age mean A": [df_A["age"].mean()],
+    "Age mean B": [df_B["age"].mean()],
+    "Income mean A": [df_A["income"].mean()],
+    "Income mean B": [df_B["income"].mean()],
+})
+
+print("\n=== Cleaned Data ===")
+print(df)
+
+print("\n=== Missingness Per Column (%) ===")
+print(missing_per_column)
+
+print("\n=== Missingness Per Row ===")
+print(missing_per_row)
+
+print("\n=== Version A (Drop Rows) ===")
+print(df_A)
+
+print("\n=== Version B (Impute + Indicators) ===")
+print(df_B)
+
+print("\n=== Comparison Between A and B ===")
+print(comparison)
+
+
+"""____________________________________________homework5___________________________________"""
+
+
+train = pd.DataFrame({
+    "age": [25, None, 40, 33],
+    "city": ["NY", "SF", None, "NY"],
+})
+
+test = pd.DataFrame({
+    "age": [None, 50],
+    "city": ["SF", None],
+})
+
+
+def fit_imputer(train_df, num_cols, cat_cols):
+    params = {}
+    params["num_medians"] = train_df[num_cols].median()
+    params["cat_modes"] = train_df[cat_cols].mode().iloc[0]
+    return params
+
+def transform_imputer(df, params, add_indicators=True):
+    df2 = df.copy()
+
+ 
+    for col in params["num_medians"].index:
+        if add_indicators:
+            df2[col + "_missing"] = df2[col].isna().astype(int)
+        df2[col] = df2[col].fillna(params["num_medians"][col])
+
+   
+    for col in params["cat_modes"].index:
+        if add_indicators:
+            df2[col + "_missing"] = df2[col].isna().astype(int)
+        df2[col] = df2[col].fillna(params["cat_modes"][col])
+
+    return df2
+
+
+num_cols = ["age"]
+cat_cols = ["city"]
+
+params = fit_imputer(train, num_cols, cat_cols)
+
+
+train_imputed = transform_imputer(train, params, add_indicators=True)
+test_imputed = transform_imputer(test, params, add_indicators=True)
+
+print("=== Imputer Parameters ===")
+print(params, "\n")
+
+print("=== Train After Imputation ===")
+print(train_imputed, "\n")
+
+print("=== Test After Imputation ===")
+print(test_imputed)
+
+"""______________________________________________________________homework6___________________________"""
+
+
+
+
+rows = [
+    {"user": "U1", "day": "2024-01-01", "product": "A", "clicked": 1},
+    {"user": "U1", "day": "2024-01-01", "product": "A", "clicked": 1},
+    {"user": "U1", "day": "2024-01-01", "product": "B", "clicked": 0},
+    {"user": "U2", "day": "2024-01-02", "product": "A", "clicked": 1},
+]
+
+df = pd.DataFrame(rows)
+
+
+df_no_exact_dupes = df.drop_duplicates()
+
+
+df_unique = df_no_exact_dupes.drop_duplicates(subset=["user", "day", "product"])
+
+
+user_agg = df_unique.groupby("user").agg(
+    event_count=("product", "count"),
+    ever_clicked=("clicked", "max")
+).reset_index()
+
+print(" After Removing Exact Duplicate")
+print(df_no_exact_dupes, "\n")
+
+print(" After Applying (user, day, product) Uniqueness ")
+print(df_unique, "\n")
+
+print(" User-Level Aggregation ")
+print(user_agg)
+
 
