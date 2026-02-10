@@ -340,3 +340,134 @@ print(" User-Level Aggregation ")
 print(user_agg)
 
 
+
+
+"""__________Day 10 Activity: Outliers Practice_________________________________"""
+
+
+
+
+np.random.seed(10)
+values = np.concatenate([np.random.lognormal(10, 0.5, 1000), [1e7, 2e7]])
+df = pd.DataFrame({"income": values})
+
+
+def iqr_bounds(s: pd.Series, k=1.5):
+    Q1 = s.quantile(0.25)
+    Q3 = s.quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - k * IQR
+    upper = Q3 - k * IQR
+    return lower, upper
+
+def detect_outliers_iqr(s: pd.Series, k=1.5):
+    lower, upper = iqr_bounds(s, k)
+    return (s < lower) | (s > upper)
+
+
+
+def detect_outliers_zscore(s: pd.Series, threshold=3):
+    z = (s - s.mean()) / s.std()
+    return z.abs() > threshold
+
+def cap_iqr(s: pd.Series, k=1.5):
+    lower, upper = iqr_bounds(s, k)
+    return s.clip(lower=lower, upper=upper)
+
+
+
+df["income_log1p"] = np.log1p(df["income"])
+
+df["iqr_outlier"] = detect_outliers_iqr(df["income"])
+df["z_outlier"] = detect_outliers_zscore(df["income"])
+df["income_cap_iqr"] = cap_iqr(df["income"])
+
+summary = pd.DataFrame({
+    "original_mean": [df["income"].mean()],
+    "capped_mean": [df["income_cap_iqr"].mean()],
+    "log1p_mean": [df["income_log1p"].mean()],
+    "iqr_outliers_count": [df["iqr_outlier"].sum()],
+    "z_outliers_count": [df["z_outlier"].sum()],
+})
+
+print("IQR Outliers")
+print(df["iqr_outlier"].value_counts(), "\n")
+
+print(" Z‑Score Outliers")
+print(df["z_outlier"].value_counts(), "\n")
+
+print("Summary Comparison")
+print(summary)
+
+
+"""_____________________ Day 9 Activity: Data Types Practice Tasks________________"""
+
+import re
+
+raw = {
+    "age": ["25", "30", "unknown"],
+    "income": ["$50,000", "$60,000", None],
+    "signup": ["2024-01-01", "01/05/2024", "not a date"],
+}
+
+df = pd.DataFrame(raw)
+
+def normalize_schema(df):
+    df2 = df.copy()
+
+    numeric_like = []
+    currency_like = []
+    datetime_like = []
+
+
+    for col in df2.columns:
+        sample = df2[col].dropna().astype(str).head(5)
+
+        if sample.str.contains(r"^\$|,", regex=True).any():
+            currency_like.append(col)
+            continue
+
+        if sample.str.contains(r"^\d+(\.\d+)?$", regex=True).any():
+            numeric_like.append(col)
+            continue
+
+        if sample.str.contains(r"-|/", regex=True).any():
+            datetime_like.append(col)
+            continue
+
+    for col in currency_like:
+        df2[col] = (
+            df2[col]
+            .astype(str)
+            .str.replace(r"[\$,]", "", regex=True)
+            .replace("None", np.nan)
+        )
+        df2[col] = pd.to_numeric(df2[col], errors="coerce")
+
+    for col in numeric_like:
+        df2[col] = pd.to_numeric(df2[col], errors="coerce")
+
+    for col in datetime_like:
+        df2[col] = pd.to_datetime(df2[col], errors="coerce")
+
+    nan_report = df2.isna().sum()
+
+    return df2, {
+        "numeric_like": numeric_like,
+        "currency_like": currency_like,
+        "datetime_like": datetime_like,
+        "nan_counts": nan_report,
+    }
+
+
+
+df_clean, report = normalize_schema(df)
+
+print("ORIGINAL DATA")
+print(df, "\n")
+
+print("CLEANED DATA")
+print(df_clean, "\n")
+
+print("REPORT")
+print(report)
