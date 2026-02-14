@@ -58,3 +58,6 @@ plt.figure(figsize=(8,6))
 sns.scatterplot(x="income", y="orders_count", data=df_clean)
 plt.title("Income vs Orders Count")
 plt.show()
+
+
+"""LARA AND SHAHAD"""
