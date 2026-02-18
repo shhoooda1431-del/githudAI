@@ -471,3 +471,128 @@ print(df_clean, "\n")
 
 print("REPORT")
 print(report)
+
+"""___________________________________________________day 22 ___________________________________________________"""
+
+"""
+Day 22 Activity Solution: Interaction Features
+"""
+
+import pandas as pd
+
+path = "data/day22_interactions.csv"
+df = pd.read_csv(path)
+
+(df["feature1_x_feature2"]) = df["feature1"] * df["feature2"]
+
+(df["feature1_plus_feature2"]) = df["feature1"] + df["feature2"]
+
+
+(df["high_f1_and_flag"]) = ((df["feature1"] > df["feature1"].median()) & (df["flag"] == 1)).astype(int)
+
+corrs = df[["feature1", "feature2", "feature1_x_feature2", "feature1_plus_feature2", "high_f1_and_flag", "target"]].corr()["target"]
+print(corrs.sort_values(ascending=False))
+
+"""
+Day 21 Activity Solution: Domain-Driven Features
+"""
+
+import pandas as pd
+import numpy as np
+
+path = "data/day21_housing.csv"
+df = pd.read_csv(path)
+
+df["price_per_sqft"] = df["price"] / df["sqft"].replace({0: np.nan})
+df["price_per_sqft"] = df["price_per_sqft"].fillna(df["price_per_sqft"].median())
+
+df["bedrooms_per_sqft"] = df["bedrooms"] / df["sqft"].replace({0: np.nan})
+df["bedrooms_per_sqft"] = df["bedrooms_per_sqft"].fillna(0.0)
+
+df["bathrooms_per_bedroom"] = df["bathrooms"] / df["bedrooms"].replace({0: np.nan})
+df["bathrooms_per_bedroom"] = df["bathrooms_per_bedroom"].fillna(df["bathrooms_per_bedroom"].median())
+
+print(df[["price", "sqft", "price_per_sqft", "bedrooms_per_sqft", "bathrooms_per_bedroom"]].head())
+
+"""
+Day 23 Activity Solution: Polynomial Features
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
+path = "data/day23_poly.csv"
+df = pd.read_csv(path)
+
+X = df[["x"]].values
+y = df["y"].values
+
+for degree in [1, 2, 5]:
+    poly = PolynomialFeatures(degree=degree, include_bias=False)
+    X_poly = poly.fit_transform(X)
+    model = LinearRegression().fit(X_poly, y)
+    score = model.score(X_poly, y)
+    print(f"Degree {degree} R^2:", score)
+"""
+Day 24 Activity Solution: Feature Selection
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.feature_selection import VarianceThreshold
+
+path = "data/day24_selection.csv"
+df = pd.read_csv(path)
+
+y = df["target"]
+X = df.drop(columns=["target"])
+
+
+selector = VarianceThreshold(threshold=0.01)
+X_var = selector.fit_transform(X)
+kept_cols = X.columns[selector.get_support()]
+X_var_df = pd.DataFrame(X_var, columns=kept_cols)
+
+
+corr = X_var_df.corr().abs()
+upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
+removed = [c for c in upper.columns if any(upper[c] > 0.9)]
+X_reduced = X_var_df.drop(columns=removed)
+
+print("Kept after variance:", list(kept_cols))
+print("Removed due to correlation:", removed)
+print("Final columns:", X_reduced.columns.tolist())
+
+"""
+Day 25 Activity Solution: Mini-Project (Feature Engineering)
+"""
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
+
+path = "data/day25_project.csv"
+df = pd.read_csv(path)
+
+eng = df.copy()
+eng["price_per_sqft"] = eng["price"] / eng["sqft"].replace({0: np.nan})
+eng["price_per_sqft"] = eng["price_per_sqft"].fillna(eng["price_per_sqft"].median())
+eng["rooms_per_sqft"] = eng["rooms"] / eng["sqft"].replace({0: np.nan})
+eng["rooms_per_sqft"] = eng["rooms_per_sqft"].fillna(0.0)
+
+eng["price_x_rooms"] = eng["price"] * eng["rooms"]
+
+poly = PolynomialFeatures(degree=2, include_bias=False)
+poly_vals = poly.fit_transform(eng[["price_per_sqft"]])
+poly_cols = poly.get_feature_names_out(["price_per_sqft"])
+poly_df = pd.DataFrame(poly_vals, columns=poly_cols)
+eng = pd.concat([eng, poly_df], axis=1)
+
+eng.to_csv("data/day25_engineered.csv", index=False)
+print(eng.head())
+
+
+
+
